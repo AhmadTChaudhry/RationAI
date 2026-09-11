@@ -21,8 +21,6 @@ left, and is Claude waiting on me?*
 
 ## The screens
 
-Every image here is a real capture from the hardware, not a mock-up. The
-firmware renders a frame into an off-screen buffer and streams it over serial.
 Three taps of BOOT switches brand; four taps of KEY flips the layout.
 
 | | Landscape | Portrait totem |
@@ -46,11 +44,7 @@ progressively less cheerful as the tightest limit fills.
 
 <img src="docs/anim/waving-evil.gif" width="120" align="right" alt="">
 
-ChatGPT mode doesn't get a second set of artwork. The same frames are
-recoloured at draw time: the body takes OpenAI green, the eyes go red, and
-angled brows are stamped above them. The eye cells are *found* rather than
-hard-coded (they're the darkest palette entry a frame actually uses), so all
-17 animations get the treatment for free.
+In ChatGPT mode the mascot turns evil: green body, red eyes, angled brows.
 
 <br clear="right">
 
@@ -70,10 +64,9 @@ Mac                                              ESP32-S3
 **The board holds no credentials.** It reads JSON off the LAN and nothing else.
 Tokens stay on the Mac, where they already live.
 
-Both usage endpoints are the ones the official desktop clients use. Neither is
-a published API, so treat the shapes as liable to change. Every field is read
-defensively, and a failure degrades to the last real reading tagged `stale`
-rather than showing a wrong number.
+Neither usage endpoint is a published API, so they may change without notice.
+When a reading can't be refreshed the display marks it `stale` rather than
+showing a number that might be wrong.
 
 ## Quick start
 
@@ -83,8 +76,8 @@ rather than showing a wrong number.
 bash server/install.sh
 ```
 
-Installs a launchd agent using that machine's own paths, so the same repo works
-on a second laptop under a different username. Stdlib only, no pip install.
+Installs a launchd agent. Works on a second laptop as-is, and needs nothing
+beyond the Python that ships with macOS.
 
 **2. Firmware, with the board on USB:**
 

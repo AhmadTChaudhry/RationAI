@@ -155,11 +155,9 @@ different arrangement, not a rotation:
 └──────────────────┘
 ```
 
-The avatar is **scaled per animation** rather than drawn at a fixed cell size.
-The art's bounding boxes range from 13x17 to 50x33 cells, so a fixed scale
-left most of the stage empty. `walking` drew at 72x54 inside 165x111 with
-57px of dead space above it. Each animation is now fitted to the area and
-centred, up to 6x. No trend chart here: the three limits get the room instead.
+The avatar is scaled to fill the area and centred, so it stays large whatever
+animation is playing. There's no trend chart in this layout; the three limits
+get the room instead.
 
 Stand it on its short edge. The choice is remembered across reboots.
 
