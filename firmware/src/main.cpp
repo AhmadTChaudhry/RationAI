@@ -286,9 +286,27 @@ static float batteryVolts() {
   return (total / 8.0f) * 2.0f / 1000.0f;
 }
 
+// A lithium cell's voltage is not linear in charge: it sits near 3.7-3.8V for
+// most of the discharge and then falls away quickly. A straight line from 3.3V
+// to 4.2V reads roughly 20 points high through the middle, so interpolate a
+// curve instead. Approximate, and it reads low under load.
+static const struct { float v; uint8_t pct; } BATT_CURVE[] = {
+    {4.20f, 100}, {4.10f, 90}, {4.00f, 80}, {3.93f, 70}, {3.87f, 60},
+    {3.82f, 50},  {3.78f, 40}, {3.75f, 30}, {3.71f, 20}, {3.66f, 10},
+    {3.55f, 5},   {BATT_EMPTY_V, 0},
+};
+
 static int batteryPercent(float volts) {
-  float pct = (volts - BATT_EMPTY_V) / (BATT_FULL_V - BATT_EMPTY_V) * 100.0f;
-  return (int)roundf(constrain(pct, 0.0f, 100.0f));
+  if (volts >= BATT_CURVE[0].v) return 100;
+  for (size_t i = 1; i < sizeof(BATT_CURVE) / sizeof(BATT_CURVE[0]); i++) {
+    if (volts >= BATT_CURVE[i].v) {
+      const float span = BATT_CURVE[i - 1].v - BATT_CURVE[i].v;
+      const float frac = span > 0 ? (volts - BATT_CURVE[i].v) / span : 0;
+      return (int)roundf(BATT_CURVE[i].pct +
+                         frac * (BATT_CURVE[i - 1].pct - BATT_CURVE[i].pct));
+    }
+  }
+  return 0;
 }
 
 // This board exposes no charge-status pin, so charging is inferred, not read:
@@ -1189,6 +1207,9 @@ static void setPortrait(bool want) {
   stageAreaH = portrait ? P_STAGE_H : STAGE_PX_H;
 
   stage.deleteSprite();
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);  // full range for a 4.2V cell after the 2:1 divider
+
   stage.setColorDepth(16);
   stage.createSprite(stageAreaW, stageAreaH);
 
@@ -1316,6 +1337,11 @@ static void handleSerialCommands() {
     drawStage();
     delay(20);
     dumpScreen();
+  } else if (c == 'v') {
+    float v = batteryVolts();
+    Serial.printf("BATT raw_mV=%u volts=%.3f pct=%d charging=%d\n",
+                  analogReadMilliVolts(PIN_BATTERY), v, batteryPercent(v),
+                  batteryCharging(v) ? 1 : 0);
   } else if (c == 'b') {
     brand = (brand + 1) % BRAND_COUNT;
     prefs.putInt("brand", brand);

@@ -184,19 +184,48 @@ redefinition error.
 
 ## Battery
 
-Top right, in both layouts: a real icon with proportional fill, red at 15% or
-below, and a **⚡ bolt** while charging.
+Top right, in both layouts: an icon with proportional fill, red at 15% or
+below, and a bolt while charging.
 
-For a 3.7V LiPo: empty at 3.30V, full at 4.20V.
+### Choosing a cell
 
-**Charging is inferred, not read.** This board breaks out no charge-status pin.
-Plugged in, the charger drives the sense rail to roughly USB voltage, well
-above a cell's 4.2V full mark, so anything at **4.30V or higher** means
-external power, and the bolt shows. Unplugged, a sustained rise of ≥20mV over
-~30s also counts as charging. The icon only hides below 2.5V, when nothing is
-on the sense pin at all.
+The board charges through a TP4065 whose current is set by **R13, a 2K
+resistor**, giving roughly **525mA**. Most LiPo cells are rated to charge at
+1C, so the capacity should be at least that:
 
-While the charger is driving the rail the cell's real state of charge isn't
+| Cell | Charge rate at 525mA | |
+| --- | --- | --- |
+| 350mAh | 1.5C | over spec |
+| 400mAh | 1.3C | over spec |
+| 550mAh | 0.95C | fine |
+| 600mAh and up | under 0.9C | comfortable |
+
+Note the vendor FAQ suggests 350mAh and 400mAh cells; both exceed 1C on this
+charger. Swapping R13 for 10K drops the charge current to about 130mA if you
+want to use a small cell, but that is surface-mount rework.
+
+**The board has no low-voltage cutoff.** Use a cell with its own protection
+circuit, or a deep discharge will damage it. Most 50x25x40-style pouch cells
+include one; check the datasheet.
+
+### How the reading works
+
+Battery voltage arrives on GPIO4 through a 2:1 divider, sampled with 12-bit
+resolution at 11dB attenuation and averaged over 8 reads.
+
+Percentage comes from a lithium discharge curve rather than a straight line
+between 3.3V and 4.2V. A cell sits near 3.7-3.8V for most of its discharge, so
+a linear map reads roughly 20 points high through the middle. Expect it to read
+low under load, since the voltage sags while drawing current.
+
+**Charging is inferred, not read.** The board exposes no charge-status pin.
+Plugged in, the charger drives the sense rail to roughly USB voltage, measured
+at about 4.85V, well above a full cell's 4.2V. So anything at **4.30V or
+higher** means external power and the bolt shows. Unplugged, a sustained rise
+of 20mV or more over 30s also counts as charging. The icon hides below 2.5V,
+when nothing is on the sense pin at all.
+
+While the charger drives the rail the cell's real state of charge is not
 measurable, so the icon shows full with a bolt rather than guessing.
 
 ## Alerts
