@@ -7,8 +7,7 @@
 // are ignored by this project, which scales each animation to fit its own
 // area instead.
 //
-// Converted from Anthropic's Clawd artwork. Included for personal use on the
-// author's own device; not offered for redistribution.
+// Converted from Anthropic's Clawd artwork.
 // ============================================================
 #pragma once
 #include <stdint.h>

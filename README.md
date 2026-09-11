@@ -135,10 +135,3 @@ finicky USB, and how to verify the result.
   ESP32-S3, 170×320 ST7789, two buttons, LiPo connector
 - A USB-C **data** cable. A marginal one will fail mid-flash; see MANUAL.md.
 - Optional 3.7V LiPo for untethered use
-
-## Notes on bundled assets
-
-`firmware/src/splash_animations.h` holds Anthropic's Clawd mascot animations,
-and `firmware/src/SuperchargeCn18.h` is a converted commercial font. Both are
-included here for personal use on the author's own devices and are not offered
-for redistribution.
