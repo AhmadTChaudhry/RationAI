@@ -1,0 +1,5 @@
+.pio/
+firmware/src/secrets.h
+__pycache__/
+*.pyc
+usage_endpoint_response.json
