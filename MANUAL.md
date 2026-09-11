@@ -283,11 +283,18 @@ mDNS → the literal address.
 ### First boot / changing WiFi
 
 Hold **KEY** while powering on, then join the WiFi network **`RationAI-Setup`**
-from your phone or laptop. The portal sets:
+from your phone or laptop. The portal opens on its own; if it doesn't, browse
+to `192.168.4.1`.
+
+| | |
+| --- | --- |
+| <img src="docs/portal-menu.png" width="300" alt="Setup portal menu"> | <img src="docs/portal-wifi.png" width="300" alt="Configure WiFi page: scan results, network credentials, server host and port"> |
+
+Tap **Configure WiFi**, pick a network from the scan, and fill in:
 
 - WiFi network and password
 - **Server host**: your Mac's name (`scutil --get LocalHostName`, no `.local`),
-  or a bare IP to skip mDNS entirely
+  or a bare IP to skip mDNS entirely. Leave it blank to let discovery find it.
 - **Server port**: default `8787`
 
 These are stored on the device, so changing networks never needs a reflash.

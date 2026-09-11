@@ -1353,6 +1353,60 @@ static void handleSerialCommands() {
 
 // ----------------------------------------------------------------- lifecycle
 
+// Restyles the setup portal to match the display: WiFiManager appends this
+// after its own stylesheet, so these rules win and the markup it emits is
+// left alone.
+static const char PORTAL_CSS[] PROGMEM = R"CSS(
+<style>
+:root{color-scheme:dark;--bg:#141413;--card:#1d1d1b;--line:#2e2c29;--tx:#f0eee6;--dim:#8a8780;--ac:#d97757}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);margin:0;padding:26px 16px 44px;
+-webkit-font-smoothing:antialiased;text-align:left;
+font:15px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.wrap{max-width:420px;min-width:0;width:100%;margin:0 auto;display:block}
+h1{display:none}
+.wrap::before{content:'RationAI';display:block;font-size:26px;font-weight:650;
+letter-spacing:-.4px;padding-bottom:15px;margin-bottom:20px;
+border-bottom:1px solid var(--line)}
+h3{margin:-8px 0 22px;font-size:13px;font-weight:500;color:var(--dim)}
+/* the library separates blocks with stray <br>; the margins do that here */
+.wrap>br,form br{display:none}
+hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+/* network rows: the library emits one div per scan result */
+.wrap>div{display:flex;align-items:center;gap:10px;background:var(--card);
+border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin:8px 0}
+a{flex:1;min-width:0;display:block;color:var(--tx);font-weight:600;
+text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a:hover{color:var(--ac);text-decoration:none}
+.q{filter:invert(1);opacity:.75;float:none;flex:none;padding:0;margin:0}
+label{display:block;margin:18px 0 7px;font-size:11px;font-weight:700;
+letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+input{width:100%;margin:0;padding:13px 14px;font-size:16px;color:var(--tx);
+background:var(--card);border:1px solid var(--line);border-radius:12px}
+input:focus{outline:0;border-color:var(--ac);box-shadow:0 0 0 3px rgba(217,119,87,.2)}
+input::placeholder{color:#5f5c56}
+#showpass{width:17px;height:17px;margin:15px 0 0;vertical-align:middle;accent-color:var(--ac)}
+label[for=showpass]{display:inline;margin-left:7px;font-size:14px;font-weight:500;
+letter-spacing:0;text-transform:none;color:var(--dim);vertical-align:middle}
+button{width:100%;margin:9px 0;padding:14px 16px;font-size:15px;font-weight:650;
+line-height:1.2;color:var(--tx);background:var(--card);border:1px solid var(--line);
+border-radius:12px;cursor:pointer;transition:none}
+button:hover{border-color:#403d38}
+button:active{opacity:1 !important;transform:translateY(1px)}
+button[type=submit],form[action='/wifi'] button{background:var(--ac);
+border-color:var(--ac);color:#1b100b}
+button.D{background:transparent;border-color:#8c3a22;color:#e08363}
+.msg{margin:24px 0 0;padding:16px;color:var(--dim);background:var(--card);
+border:1px solid var(--line);border-left:3px solid var(--dim);border-radius:12px}
+.msg strong{color:var(--tx)}
+.msg.S{border-left-color:#10a37f}
+.msg.D{border-left-color:#bf4722}
+dt{color:var(--dim);font-weight:600}
+dd{color:var(--tx);padding-bottom:12px}
+td,th{padding:4px 8px 4px 0;text-align:left}
+</style>
+)CSS";
+
 void setup() {
   Serial.begin(115200);
 
@@ -1393,6 +1447,10 @@ void setup() {
   splash("connecting to wifi");
 
   WiFiManager wm;
+  static const char *PORTAL_MENU[] = {"wifi", "info", "sep", "exit"};
+  wm.setTitle("RationAI");
+  wm.setCustomHeadElement(PORTAL_CSS);
+  wm.setMenu(PORTAL_MENU, 4);
   char hostBuf[64], portBuf[8];
   strlcpy(hostBuf, cfgHost.c_str(), sizeof(hostBuf));
   snprintf(portBuf, sizeof(portBuf), "%d", cfgPort);

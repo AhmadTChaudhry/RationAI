@@ -105,6 +105,10 @@ pio run -d firmware -t upload
 pick your network. Leave the server host blank; discovery handles it. The
 board remembers four networks, so home, work and a phone hotspot all just work.
 
+| | |
+| --- | --- |
+| <img src="docs/portal-menu.png" width="290" alt="Setup portal menu"> | <img src="docs/portal-wifi.png" width="290" alt="Configure WiFi page: scan results, credentials, server host and port"> |
+
 Full operating instructions, every button gesture, and the troubleshooting
 table are in **[MANUAL.md](MANUAL.md)**.
 
