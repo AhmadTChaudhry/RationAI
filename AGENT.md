@@ -17,7 +17,7 @@ PlatformIO is the only build dependency. Install it if `pio` is missing:
 pipx install platformio   # or: python3 -m pip install --user platformio
 ```
 
-It lives at `~/.local/bin/pio` — add that to `PATH` for the session.
+It lives at `~/.local/bin/pio`. Add that to `PATH` for the session.
 
 ## 2. Server
 
@@ -27,7 +27,7 @@ bash server/install.sh
 
 This writes a launchd agent using the current machine's own paths and Python,
 then waits for the server to answer. It needs **Claude Code signed in on this
-machine** — the server reads the OAuth token Claude Code already stores in the
+machine**, because the server reads the OAuth token Claude Code already stores in the
 Keychain. For the ChatGPT side, the Codex app must be signed in
 (`~/.codex/auth.json`).
 
@@ -38,8 +38,8 @@ curl -s http://127.0.0.1:8787/usage | python3 -m json.tool | head -30
 ```
 
 You want `"available": true` for at least `claude`. If it says
-`token expired`, run `claude -p hi` in a terminal — only the CLI re-seeds the
-Keychain, the desktop app does not — then re-check.
+`token expired`, run `claude -p hi` in a terminal. Only the CLI re-seeds the
+Keychain; the desktop app does not. Then re-check.
 
 ## 3. WiFi credentials
 
@@ -48,7 +48,7 @@ cp firmware/src/secrets.h.example firmware/src/secrets.h
 ```
 
 Ask the user for their WiFi name and password and have **them** put it in that
-file — do not ask them to paste credentials into the chat. `secrets.h` is
+file. Do not ask them to paste credentials into the chat. `secrets.h` is
 gitignored. These are only first-boot defaults; the device's setup portal can
 change them later without a reflash.
 
@@ -91,7 +91,7 @@ sleep 30 && grep -c "GET /usage" /tmp/rationai-server.log
 ```
 
 A rising count from an IP that is not `127.0.0.1` is the display polling. If
-the count stays flat, the board is not reaching the server — check that both
+the count stays flat, the board is not reaching the server, so check that both
 are on the same network.
 
 ## 6. Optional: the live avatar
@@ -99,7 +99,7 @@ are on the same network.
 The mascot can animate in step with the user's Claude Code session and wave
 when Claude is blocked waiting on them. That needs hooks in
 `~/.claude/settings.json` POSTing to the server. **Read the existing file and
-merge — never overwrite it.** Add this hook to each of `UserPromptSubmit`,
+merge, never overwriting it.** Add this hook to each of `UserPromptSubmit`,
 `PreToolUse`, `PostToolUse`, `Notification`, `Stop`, `SessionStart`,
 `SessionEnd`:
 
@@ -115,7 +115,7 @@ merge — never overwrite it.** Add this hook to each of `UserPromptSubmit`,
 ```
 
 `async` and the trailing `|| true` matter: hooks must never block or fail
-Claude Code. Validate with `jq -e . ~/.claude/settings.json` afterwards — a
+Claude Code. Validate with `jq -e . ~/.claude/settings.json` afterwards, because a
 malformed settings file silently disables every setting in it. The user may
 need to restart Claude Code before new hooks take effect.
 

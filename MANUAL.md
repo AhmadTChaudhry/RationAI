@@ -1,4 +1,4 @@
-# RationAI — user manual
+# RationAI user manual
 
 Claude and ChatGPT usage limits on a LilyGO T-Display-S3, with Clawd as a live
 avatar of your Claude Code session.
@@ -36,7 +36,7 @@ unfilled part is what's left.
 
 Colours: brand colour under 75% used, **amber** at 75%, **red** at 90%.
 
-The **binding limit** — the one actually constraining you right now — has its
+The **binding limit**, the one actually constraining you right now, has its
 value in the brand colour; the others stay grey. Claude reports this itself;
 for ChatGPT it's whichever window is tightest.
 
@@ -44,17 +44,17 @@ for ChatGPT it's whichever window is tightest.
 
 The 5-hour row counts down live (`Resets in 4h19m`), ticking on the device
 between polls. The longer rows show wall-clock time (`Resets Fri 8:00 PM`),
-formatted by the server — the board has no clock and no timezone.
+formatted by the server, because the board has no clock and no timezone.
 
 If the projection says you'll hit the cap *before* the window resets, an amber
 `· cap in 2h16m` appears next to the reset time.
 
 ### Right column
 
-- **Sparkline** — the binding window over the last ~3h, on a fixed 0–100 scale
+- **Sparkline**: the binding window over the last ~3h, on a fixed 0-100 scale
   (an autoscaled trace makes a flat 20→22% hour look like a cliff)
-- **`+3.4%/h`** — burn rate for that window
-- **`$12.40`** — estimated cost of the current Claude Code session
+- **`+3.4%/h`**: burn rate for that window
+- **`$12.40`**: estimated cost of the current Claude Code session
 
 ---
 
@@ -76,8 +76,8 @@ hooks, and falls back to your quota level when the session is quiet.
 **The wave is the point.** You don't have to switch windows to find out whether
 Claude is waiting on you.
 
-In **CHATGPT mode the mascot turns evil** — green body, red eyes and angled
-brows — generated from the same frames rather than separate artwork.
+In **CHATGPT mode the mascot turns evil**, with a green body, red eyes and angled
+brows, generated from the same frames rather than separate artwork.
 
 ### Quota fallback (no hooks, or session idle >20s)
 
@@ -119,7 +119,7 @@ reboots. So is the portrait/landscape choice.
 Nothing else moves it either: threshold alerts flash the screen but leave the
 displayed brand alone.
 
-**The animation does change by itself** — that's the avatar. It follows your
+**The animation does change by itself**. That's the avatar. It follows your
 Claude Code session (or your quota level when the session is quiet). Tap a
 button to pin one; hold KEY to hand it back.
 
@@ -131,7 +131,7 @@ ChatGPT header.
 
 ## Portrait totem
 
-Four KEY taps flips to the panel's native 170×320 portrait layout — a
+Four KEY taps flips to the panel's native 170×320 portrait layout, a
 different arrangement, not a rotation:
 
 ```
@@ -157,7 +157,7 @@ different arrangement, not a rotation:
 
 The avatar is **scaled per animation** rather than drawn at a fixed cell size.
 The art's bounding boxes range from 13x17 to 50x33 cells, so a fixed scale
-left most of the stage empty — `walking` drew at 72x54 inside 165x111 with
+left most of the stage empty. `walking` drew at 72x54 inside 165x111 with
 57px of dead space above it. Each animation is now fitted to the area and
 centred, up to 6x. No trend chart here: the three limits get the room instead.
 
@@ -166,8 +166,8 @@ Stand it on its short edge. The choice is remembered across reboots.
 ## Wordmark typeface
 
 The portrait wordmark uses **Supercharge Condensed 18pt**, converted from the
-OTF with Adafruit's `fontconvert`. Everything else — limit labels, percentages,
-reset times — stays on TFT_eSPI's built-in bitmap fonts, which are crisper
+OTF with Adafruit's `fontconvert`. Everything else, including limit labels, percentages and
+reset times, stays on TFT_eSPI's built-in bitmap fonts, which are crisper
 below ~9pt.
 
 To change it, edit the single `setFreeFont` call in `drawBrandWordPortrait()`.
@@ -182,7 +182,7 @@ Two constraints: the usable width is **166px** and the wordmark slot is
 | FreeSansOblique 18pt (bundled) | 165×25 | 1px spare |
 | Supercharge 18pt (regular) | 195×40 | clips |
 
-Don't `#include` the bundled GFX font headers — TFT_eSPI already pulls them all
+Don't `#include` the bundled GFX font headers. TFT_eSPI already pulls them all
 in, and Adafruit's headers have no include guards, so a second include is a
 redefinition error.
 
@@ -194,8 +194,8 @@ below, and a **⚡ bolt** while charging.
 For a 3.7V LiPo: empty at 3.30V, full at 4.20V.
 
 **Charging is inferred, not read.** This board breaks out no charge-status pin.
-Plugged in, the charger drives the sense rail to roughly USB voltage — well
-above a cell's 4.2V full mark — so anything at **4.30V or higher** means
+Plugged in, the charger drives the sense rail to roughly USB voltage, well
+above a cell's 4.2V full mark, so anything at **4.30V or higher** means
 external power, and the bolt shows. Unplugged, a sustained rise of ≥20mV over
 ~30s also counts as charging. The icon only hides below 2.5V, when nothing is
 on the sense pin at all.
@@ -205,7 +205,7 @@ measurable, so the icon shows full with a bolt rather than guessing.
 
 ## Alerts
 
-- Crossing **75%** flashes amber; crossing **90%** flashes red — and the panel
+- Crossing **75%** flashes amber; crossing **90%** flashes red, and the panel
   jumps to the brand that needs attention
 - A window **rolling over** flashes the brand colour (good news)
 - Backlight sits at ~47% while everything is under 75%, and goes full
@@ -217,7 +217,7 @@ measurable, so the icon shows full with a bolt rather than guessing.
 
 The display doesn't need to know which machine it's talking to. Each server
 advertises itself on the network as `_rationai._tcp`, and the board browses
-for that service — so it connects to whichever laptop is running the server,
+for that service, so it connects to whichever laptop is running the server,
 on whatever network, with nothing configured.
 
 **On the second laptop, once:**
@@ -228,18 +228,18 @@ bash server/install.sh
 
 That writes a launchd agent using that machine's own paths and Python, so the
 same repo works under a different username. It needs Claude Code (and Codex,
-if you want that side) signed in there — the tokens are what the server reads.
+if you want that side) signed in there, since the tokens are what the server reads.
 
 **On the board, once per network:** hold KEY while powering on, join
-`RationAI-Setup`, pick the WiFi. It remembers **four** networks — home, work,
-phone hotspot, spare — and tries them all at boot, so adding one never forgets
+`RationAI-Setup`, pick the WiFi. It remembers **four** networks (home, work,
+phone hotspot, spare) and tries them all at boot, so adding one never forgets
 the last. Leave the server host field blank; discovery handles it.
 
 ### Corporate WiFi will probably not work
 
 Most workplace networks block client-to-client traffic and multicast. That
 kills both the discovery and the HTTP request itself, and no amount of
-configuration on the board fixes it — the network is refusing to route
+configuration on the board fixes it. The network is refusing to route
 between your laptop and the display.
 
 **Use your phone's hotspot at work.** Join the board and the laptop to it
@@ -261,9 +261,9 @@ Hold **KEY** while powering on, then join the WiFi network **`RationAI-Setup`**
 from your phone or laptop. The portal sets:
 
 - WiFi network and password
-- **Server host** — your Mac's name (`scutil --get LocalHostName`, no `.local`),
+- **Server host**: your Mac's name (`scutil --get LocalHostName`, no `.local`),
   or a bare IP to skip mDNS entirely
-- **Server port** — default `8787`
+- **Server port**: default `8787`
 
 These are stored on the device, so changing networks never needs a reflash.
 
@@ -307,12 +307,12 @@ Bottom left shows the board's IP when healthy, or the problem when not:
 
 | Message | Meaning |
 | --- | --- |
-| `192.168.88.5` | fine — that's the board's address |
+| `192.168.88.5` | fine, that's the board's address |
 | `stale 12m` | server is serving its last real reading; a token expired |
 | `token expired 4m ago …` | run any Claude Code command to renew it |
-| `can't find <host>` | mDNS failed and no fallback is set — check the portal |
+| `can't find <host>` | mDNS failed and no fallback is set, check the portal |
 | `mDNS failed, using fallback` | working, via the literal IP |
-| `http 500` / `json: …` | server reachable but unhappy — check its log |
+| `http 500` / `json: …` | server reachable but unhappy, check its log |
 | `wifi lost` | reconnecting |
 
 ---
@@ -323,12 +323,12 @@ Bottom left shows the board's IP when healthy, or the problem when not:
 ~/.local/bin/pio run -d firmware -t upload
 ```
 
-**If it fails**, this board's USB link is marginal — a partly-written app means
+**If it fails**, this board's USB link is marginal. A partly-written app means
 no serial port at all, because the port is provided by the firmware itself
 (`ARDUINO_USB_CDC_ON_BOOT=1`). Recovery:
 
 1. **Hold BOOT → tap RESET → release BOOT** (ROM download mode, always works)
-2. Retry — it often takes two or three attempts
+2. Retry, as it often takes two or three attempts
 3. Use a known-good data cable, plugged **directly** into the Mac
 
 The `--no-stub` path is more reliable here than PlatformIO's default:
@@ -347,7 +347,7 @@ published APIs. They can change without notice. Both readers degrade to the
 last real reading tagged `stale` rather than showing nothing.
 
 **Claude's token expires.** The server reuses the token Claude Code stores and
-deliberately never refreshes it — refresh tokens rotate, and renewing behind
+deliberately never refreshes it, because refresh tokens rotate, and renewing behind
 Claude Code's back could log you out of the CLI. So if the CLI sits idle long
 enough, the token lapses and the panel goes stale until you run any Claude Code
 command.
@@ -355,5 +355,5 @@ command.
 **Session cost is an estimate.** Computed from local logs against a pricing
 table in `server/activity.py`. The authoritative number is the credits row.
 
-**Usage credits are Claude's real currency** (AUD here, not USD) — the endpoint
+**Usage credits are Claude's real currency** (AUD here, not USD). The endpoint
 reports the currency and the server formats it.

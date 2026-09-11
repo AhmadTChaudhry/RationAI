@@ -54,7 +54,7 @@ echo
 printf 'waiting for the server to answer'
 for _ in $(seq 1 15); do
   if curl -sf --max-time 2 http://127.0.0.1:8787/usage >/dev/null 2>&1; then
-    echo " — up"
+    echo " up"
     echo
     echo "It advertises itself on the network as _rationai._tcp, so the display"
     echo "finds it with nothing configured. Check with:"
@@ -65,6 +65,6 @@ for _ in $(seq 1 15); do
   sleep 1
 done
 
-echo " — no answer"
+echo " no answer"
 echo "Check the log: tail /tmp/rationai-server.log" >&2
 exit 1

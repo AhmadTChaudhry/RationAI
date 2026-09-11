@@ -8,7 +8,7 @@ left, and is Claude waiting on me?*
 
 <img src="docs/landscape.png" width="100%" alt="Landscape dashboard: three limit bars with reset times, the mascot, trend and session cost">
 
-- **Real plan limits**, not estimates — the same 5-hour, weekly and credit
+- **Real plan limits**, not estimates: the same 5-hour, weekly and credit
   windows Claude Code's own `/usage` panel shows, plus the ChatGPT/Codex
   equivalents.
 - **A live avatar.** The mascot animates in step with your Claude Code session
@@ -21,7 +21,7 @@ left, and is Claude waiting on me?*
 
 ## The screens
 
-Every image here is a real capture from the hardware, not a mock-up — the
+Every image here is a real capture from the hardware, not a mock-up. The
 firmware renders a frame into an off-screen buffer and streams it over serial.
 Three taps of BOOT switches brand; four taps of KEY flips the layout.
 
@@ -33,7 +33,7 @@ Three taps of BOOT switches brand; four taps of KEY flips the layout.
 ## The mascot
 
 Claude Code hooks tell the display what the session is doing, and the mascot
-follows — so a glance tells you whether to look back at your editor.
+follows, so a glance tells you whether to look back at your editor.
 
 | <img src="docs/anim/laptop.gif" width="150" alt=""> | <img src="docs/anim/magnifier.gif" width="150" alt=""> | <img src="docs/anim/racing-car.gif" width="170" alt=""> | <img src="docs/anim/waving.gif" width="120" alt=""> |
 | :---: | :---: | :---: | :---: |
@@ -46,7 +46,7 @@ progressively less cheerful as the tightest limit fills.
 
 <img src="docs/anim/waving-evil.gif" width="120" align="right" alt="">
 
-ChatGPT mode doesn't get a second set of artwork — the same frames are
+ChatGPT mode doesn't get a second set of artwork. The same frames are
 recoloured at draw time: the body takes OpenAI green, the eyes go red, and
 angled brows are stamped above them. The eye cells are *found* rather than
 hard-coded (they're the darkest palette entry a frame actually uses), so all
@@ -71,7 +71,7 @@ Mac                                              ESP32-S3
 Tokens stay on the Mac, where they already live.
 
 Both usage endpoints are the ones the official desktop clients use. Neither is
-a published API, so treat the shapes as liable to change — every field is read
+a published API, so treat the shapes as liable to change. Every field is read
 defensively, and a failure degrades to the last real reading tagged `stale`
 rather than showing a wrong number.
 
@@ -84,7 +84,7 @@ bash server/install.sh
 ```
 
 Installs a launchd agent using that machine's own paths, so the same repo works
-on a second laptop under a different username. Stdlib only — no pip install.
+on a second laptop under a different username. Stdlib only, no pip install.
 
 **2. Firmware, with the board on USB:**
 
@@ -93,7 +93,7 @@ pio run -d firmware -t upload
 ```
 
 **3. On first boot**, join the WiFi network `RationAI-Setup` from a phone and
-pick your network. Leave the server host blank — discovery handles it. The
+pick your network. Leave the server host blank; discovery handles it. The
 board remembers four networks, so home, work and a phone hotspot all just work.
 
 Full operating instructions, every button gesture, and the troubleshooting
@@ -122,7 +122,7 @@ finicky USB, and how to verify the result.
 
 ## Hardware
 
-- [LilyGO T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3) —
+- [LilyGO T-Display-S3](https://github.com/Xinyuan-LilyGO/T-Display-S3):
   ESP32-S3, 170×320 ST7789, two buttons, LiPo connector
 - A USB-C **data** cable. A marginal one will fail mid-flash; see MANUAL.md.
 - Optional 3.7V LiPo for untethered use
