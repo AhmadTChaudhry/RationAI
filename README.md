@@ -1,7 +1,5 @@
 # RationAI
 
-<img src="docs/anim/waving.gif" width="120" align="right" alt="">
-
 A desk gauge for your Claude and ChatGPT plan allowance, on a LilyGO
 T-Display-S3.
 
@@ -17,30 +15,29 @@ left, and is Claude waiting on me?*
   and **waves when Claude is blocked waiting on you**, so you can tell from
   across the desk without switching windows.
 - **Trend at a glance.** A sparkline for the binding window and a burn rate.
-- **Two layouts**, landscape or portrait totem.
+- **Two brands, two layouts.** Claude or ChatGPT, landscape or portrait totem.
 - **Zero configuration when you move.** The server advertises itself over
   Bonjour; the display finds whichever laptop is running it, on any network.
 
-## The two layouts
+## The screens
 
-Four taps of the KEY button flips between them. Both of these are real captures
-from the hardware, not mock-ups — the firmware renders a frame into an
-off-screen buffer and streams it over serial.
+Every image here is a real capture from the hardware, not a mock-up — the
+firmware renders a frame into an off-screen buffer and streams it over serial.
+Three taps of BOOT switches brand; four taps of KEY flips the layout.
 
-| Landscape | Portrait totem |
-| --- | --- |
-| <img src="docs/landscape.png" width="420" alt="Landscape layout"> | <img src="docs/portrait.png" width="170" alt="Portrait totem layout"> |
+| | Landscape | Portrait totem |
+| --- | --- | --- |
+| **Claude** | <img src="docs/landscape.png" width="380" alt="Claude landscape"> | <img src="docs/portrait.png" width="150" alt="Claude portrait"> |
+| **ChatGPT** | <img src="docs/chatgpt-landscape.png" width="380" alt="ChatGPT landscape"> | <img src="docs/chatgpt-portrait.png" width="150" alt="ChatGPT portrait"> |
 
 ## The mascot
 
-<img src="docs/anim/racing-car.gif" width="150" align="right" alt="">
-
 Claude Code hooks tell the display what the session is doing, and the mascot
-follows: heads-down on the laptop while thinking, a magnifier while searching,
-the racing car while running a shell command — and **waving** the moment Claude
-is blocked waiting on you.
+follows — so a glance tells you whether to look back at your editor.
 
-<img src="docs/anim/magnifier.gif" width="130" align="right" alt="">
+| <img src="docs/anim/laptop.gif" width="150" alt=""> | <img src="docs/anim/magnifier.gif" width="150" alt=""> | <img src="docs/anim/racing-car.gif" width="170" alt=""> | <img src="docs/anim/waving.gif" width="120" alt=""> |
+| :---: | :---: | :---: | :---: |
+| **thinking** | **searching**<br>Grep, Glob, WebSearch | **running a command**<br>Bash | **needs you**<br>blocked on a prompt |
 
 With no hooks installed it falls back to your quota level instead, getting
 progressively less cheerful as the tightest limit fills.

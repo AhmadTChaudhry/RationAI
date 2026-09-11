@@ -1200,7 +1200,9 @@ static void splash(const String &message) {
   g->fillScreen(COL_BG);
   g->setTextDatum(MC_DATUM);
   g->setTextColor(COL_CLAUDE, COL_BG);
-  g->drawString("RationAI", 160, 70, 4);
+  g->setFreeFont(&SuperchargeCn18);
+  g->drawString("RationAI", 160, 70);
+  g->setTextFont(1);
   g->setTextColor(COL_DIM, COL_BG);
   g->drawString(message, 160, 100, 2);
   chromeDrawn = false;
@@ -1316,6 +1318,7 @@ static void handleSerialCommands() {
     dumpScreen();
   } else if (c == 'b') {
     brand = (brand + 1) % BRAND_COUNT;
+    prefs.putInt("brand", brand);
     chromeDrawn = false;
   } else if (c == 'r') {
     setPortrait(!portrait);
