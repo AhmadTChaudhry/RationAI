@@ -37,8 +37,8 @@ static const int PIN_POWER_ON = 15;
 // Both buttons are active-low with pull-ups. GPIO0 is also the strapping pin,
 // so holding it through a reset still enters download mode -- that's the
 // flashing behaviour, unaffected by reading it at runtime.
-static const int PIN_KEY = 14;  // next animation       / long: back to auto
-static const int PIN_BOOT = 0;  // prev animation, x3: switch brand
+static const int PIN_KEY = 14;   // tap: next animation, x2: switch layout
+static const int PIN_BOOT = 0;   // tap: prev animation, x2: switch brand
 static const uint32_t LONG_PRESS_MS = 700;
 static const uint32_t DEBOUNCE_MS = 25;
 static const uint32_t MULTI_PRESS_MS = 400;  // idle time that ends a press burst
@@ -1433,11 +1433,9 @@ void loop() {
   keyButton.update();
   bootButton.update();
 
-  // Presses are counted and resolved a short time after the last one, rather
-  // than acted on instantly. A deliberate triple-press spans roughly a second,
-  // so any scheme that acts on the first press has to undo itself once it
-  // recognises the gesture. Waiting 400ms costs nothing perceptible and makes
-  // one, three and four taps cleanly distinguishable.
+  // Presses are counted and resolved a short time after the last one rather
+  // than acted on instantly, so a double tap is never mistaken for two single
+  // taps. 400ms is imperceptible in use and comfortably separates the two.
   static uint32_t bootLastPressMs = 0;
   static int bootPressCount = 0;
 
@@ -1453,7 +1451,7 @@ void loop() {
     int presses = keyPressCount;
     keyPressCount = 0;
 
-    if (presses >= 4) {
+    if (presses >= 2) {
       setPortrait(!portrait);
       prefs.putBool("portrait", portrait);  // remember the layout too
     } else {
@@ -1475,7 +1473,7 @@ void loop() {
     int presses = bootPressCount;
     bootPressCount = 0;
 
-    if (presses >= 3) {
+    if (presses >= 2) {
       brand = (brand + 1) % BRAND_COUNT;
       prefs.putInt("brand", brand);  // survives a reboot
       chromeDrawn = false;           // repaint in the new brand's colours
@@ -1491,15 +1489,13 @@ void loop() {
 
   // Each long press releases its own override and nothing else, so freeing
   // the animation never disturbs the displayed brand.
-  if (keyButton.takeLong()) {
+  // Holding either button drops any pinned animation and refreshes, so the
+  // display goes back to showing what is happening right now.
+  if (keyButton.takeLong() || bootButton.takeLong()) {
     manualAnim = false;
     keyPressCount = 0;
     bootPressCount = 0;
     due = true;
-  }
-  if (bootButton.takeLong()) {
-    bootPressCount = 0;
-    due = true;  // brand is sticky now, so this is just "refresh"
   }
 
   if (due) {

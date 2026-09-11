@@ -21,7 +21,7 @@ left, and is Claude waiting on me?*
 
 ## The screens
 
-Three taps of BOOT switches brand; four taps of KEY flips the layout.
+Tap BOOT twice to switch brand, KEY twice to flip the layout.
 
 | | Landscape | Portrait totem |
 | --- | --- | --- |
@@ -67,6 +67,22 @@ Tokens stay on the Mac, where they already live.
 Neither usage endpoint is a published API, so they may change without notice.
 When a reading can't be refreshed the display marks it `stale` rather than
 showing a number that might be wrong.
+
+## Buttons
+
+Two buttons: **KEY** and **BOOT** (BOOT is the one beside the USB-C port).
+
+| Gesture | Effect |
+| --- | --- |
+| **KEY** tap | next animation |
+| **KEY** tap twice | switch landscape / portrait |
+| **BOOT** tap | previous animation |
+| **BOOT** tap twice | switch Claude / ChatGPT |
+| **hold either** | back to the live view, and refresh now |
+| **KEY** held while powering on | open the WiFi setup portal |
+
+Brand and layout are remembered across reboots. A double tap resolves shortly
+after the second press, so tap at whatever pace feels natural.
 
 ## Quick start
 

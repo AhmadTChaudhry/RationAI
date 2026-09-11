@@ -94,26 +94,24 @@ brows, generated from the same frames rather than separate artwork.
 
 ## Buttons
 
-Two buttons: **KEY** and **BOOT** (BOOT is the one next to the USB-C port).
+Two buttons: **KEY** and **BOOT** (BOOT is the one beside the USB-C port).
 
 | Gesture | Effect |
 | --- | --- |
-| **KEY** tap | next animation (pins it) |
-| **KEY** hold ~1s | release the animation back to automatic + refresh now |
-| **BOOT** tap | previous animation (pins it) |
-| **BOOT** tap ×3 | **switch CLAUDE ⇄ CHATGPT** (pins the brand) |
-| **BOOT** hold ~1s | refresh now |
-| **KEY** tap ×4 | **switch landscape ⇄ portrait totem** |
-| **KEY** held *while powering on* | open the WiFi setup portal |
+| **KEY** tap | next animation |
+| **KEY** tap twice | switch landscape / portrait |
+| **BOOT** tap | previous animation |
+| **BOOT** tap twice | switch Claude / ChatGPT |
+| **hold either** | back to the live view, and refresh now |
+| **KEY** held while powering on | open the WiFi setup portal |
 
-Both buttons resolve **400ms after you stop pressing**, so three taps at a
-normal pace register as a brand switch rather than three animation steps. Tap
-at whatever speed feels natural.
+Brand and layout are remembered across reboots. A double tap resolves shortly
+after the second press, so tap at whatever pace feels natural.
 
 ### What changes by itself, and what doesn't
 
 **The brand never changes on its own.** CLAUDE or CHATGPT stays exactly where
-you put it until you triple-tap BOOT again, and it is remembered across
+you put it until you tap BOOT twice again, and it is remembered across
 reboots. So is the portrait/landscape choice.
 
 Nothing else moves it either: threshold alerts flash the screen but leave the
@@ -121,7 +119,7 @@ displayed brand alone.
 
 **The animation does change by itself**. That's the avatar. It follows your
 Claude Code session (or your quota level when the session is quiet). Tap a
-button to pin one; hold KEY to hand it back.
+button to pin one; hold either button to hand it back.
 
 Note the live avatar reports **Claude Code only**, so in CHATGPT mode the
 mascot falls back to quota mood rather than narrating a Claude session under a
@@ -131,8 +129,8 @@ ChatGPT header.
 
 ## Portrait totem
 
-Four KEY taps flips to the panel's native 170×320 portrait layout, a
-different arrangement, not a rotation:
+Two KEY taps flips to the panel's native 170×320 portrait layout, a
+different arrangement rather than a rotation:
 
 ```
 ┌──────────────────┐
