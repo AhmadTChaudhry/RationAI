@@ -117,6 +117,7 @@ static bool capturing = false;
 
 static uint16_t COL_BG, COL_TEXT, COL_DIM, COL_TRACK;
 static uint16_t COL_CLAUDE, COL_CHATGPT, COL_WARN, COL_DANGER;
+static uint16_t COL_EVIL_EYE;
 
 enum Brand { BRAND_CLAUDE = 0, BRAND_CHATGPT = 1, BRAND_COUNT = 2 };
 static const char *BRAND_KEY[BRAND_COUNT] = {"claude", "codex"};
@@ -468,6 +469,48 @@ static void advanceAnim() {
   if (animFrame > currentAnim->loop_end) animFrame = currentAnim->loop_start;
 }
 
+// In ChatGPT mode the same art is drawn as an "evil twin": the body takes the
+// other brand's colour, the eyes go red, and angled brows are stamped above
+// them. Doing it procedurally means all 17 animations get the treatment
+// without a second set of artwork.
+//
+// The eye cells are found rather than hard-coded: in every animation they are
+// the darkest palette entry actually referenced by the frame. Unused palette
+// slots are also black, so a slot only counts once a cell uses it.
+static int eyeIndex(const splash_anim_def_t *a, const uint8_t *cells) {
+  int best = -1;
+  uint16_t bestLum = 0xFFFF;
+  bool used[16] = {false};
+  for (int i = 0, n = a->w * a->h; i < n; i++) {
+    if (cells[i] && cells[i] < 16) used[cells[i]] = true;
+  }
+  for (int i = 1; i < a->palette_count && i < 16; i++) {
+    if (!used[i]) continue;
+    uint16_t c = a->palette[i];
+    // Rough luminance on RGB565; good enough to pick out near-black.
+    uint16_t lum = ((c >> 11) & 31) * 2 + ((c >> 5) & 63) + (c & 31) * 2;
+    if (lum < bestLum) {
+      bestLum = lum;
+      best = i;
+    }
+  }
+  return bestLum <= 20 ? best : -1;  // only if it really is a dark colour
+}
+
+// One angled stroke above an eye cluster, sloping down toward the nose.
+static void drawBrow(int x0, int y0, int x1, int y1, int scale, uint16_t colour) {
+  int dx = abs(x1 - x0), dy = -abs(y1 - y0);
+  int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy;
+  for (int guard = 0; guard < 64; guard++) {
+    if (y0 >= 0) stage.fillRect(x0 * scale, y0 * scale, scale, scale, colour);
+    if (x0 == x1 && y0 == y1) break;
+    int e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x0 += sx; }
+    if (e2 <= dx) { err += dx; y0 += sy; }
+  }
+}
+
 static void drawStage() {
   stage.fillSprite(COL_BG);
   if (currentAnim) {
@@ -479,6 +522,8 @@ static void drawStage() {
     scale = constrain(scale, 1, MAX_CELL);
     int offX = (stageAreaW - a->w * scale) / 2;
     int offY = (stageAreaH - a->h * scale) / 2;
+    const bool evil = brand != BRAND_CLAUDE;
+    const int eye = evil ? eyeIndex(a, a->frames + (size_t)animFrame * a->w * a->h) : -1;
 
     const uint8_t *cells = a->frames + (size_t)animFrame * a->w * a->h;
     for (int y = 0; y < a->h; y++) {
@@ -488,8 +533,48 @@ static void drawStage() {
         // The art is authored in Claude coral. In ChatGPT mode retint the body
         // so the mode is unmistakable; darker slots stay put as shading.
         uint16_t colour = a->palette[idx];
-        if (brand != BRAND_CLAUDE && idx == 1) colour = COL_CHATGPT;
+        if (evil) {
+          if (idx == 1) colour = COL_CHATGPT;
+          else if (idx == eye) colour = COL_EVIL_EYE;
+        }
         stage.fillRect(offX + x * scale, offY + y * scale, scale, scale, colour);
+      }
+    }
+
+    if (evil && eye >= 0) {
+      // Split the eye cells into left and right clusters, then slope a brow
+      // over each: outer edge high, inner edge low.
+      int minX = a->w, maxX = -1;
+      for (int y = 0; y < a->h; y++) {
+        for (int x = 0; x < a->w; x++) {
+          if (cells[y * a->w + x] != eye) continue;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+      if (maxX > minX) {
+        int mid = (minX + maxX) / 2;
+        for (int side = 0; side < 2; side++) {
+          int lo = a->w, hi = -1, top = a->h;
+          for (int y = 0; y < a->h; y++) {
+            for (int x = 0; x < a->w; x++) {
+              if (cells[y * a->w + x] != eye) continue;
+              bool left = x <= mid;
+              if (left != (side == 0)) continue;
+              if (x < lo) lo = x;
+              if (x > hi) hi = x;
+              if (y < top) top = y;
+            }
+          }
+          if (hi < lo || top < 2) continue;
+          int outerY = top - 2, innerY = top - 1;
+          int x0 = offX / scale, y0 = offY / scale;  // cell-space origin
+          if (side == 0) {
+            drawBrow(x0 + lo, y0 + outerY, x0 + hi + 1, y0 + innerY, scale, COL_EVIL_EYE);
+          } else {
+            drawBrow(x0 + lo - 1, y0 + innerY, x0 + hi, y0 + outerY, scale, COL_EVIL_EYE);
+          }
+        }
       }
     }
   }
@@ -1229,6 +1314,9 @@ static void handleSerialCommands() {
     drawStage();
     delay(20);
     dumpScreen();
+  } else if (c == 'b') {
+    brand = (brand + 1) % BRAND_COUNT;
+    chromeDrawn = false;
   } else if (c == 'r') {
     setPortrait(!portrait);
   }
@@ -1256,6 +1344,7 @@ void setup() {
   COL_CHATGPT = tft.color565(16, 163, 127);  // OpenAI green
   COL_WARN = tft.color565(217, 167, 87);
   COL_DANGER = tft.color565(191, 71, 34);
+  COL_EVIL_EYE = tft.color565(232, 40, 40);  // the evil twin's eyes and brows
 
   stage.setColorDepth(16);
   stage.createSprite(stageAreaW, stageAreaH);

@@ -45,6 +45,16 @@ is blocked waiting on you.
 With no hooks installed it falls back to your quota level instead, getting
 progressively less cheerful as the tightest limit fills.
 
+### The evil twin
+
+<img src="docs/anim/waving-evil.gif" width="120" align="right" alt="">
+
+ChatGPT mode doesn't get a second set of artwork — the same frames are
+recoloured at draw time: the body takes OpenAI green, the eyes go red, and
+angled brows are stamped above them. The eye cells are *found* rather than
+hard-coded (they're the darkest palette entry a frame actually uses), so all
+17 animations get the treatment for free.
+
 <br clear="right">
 
 ## How it works

@@ -76,6 +76,9 @@ hooks, and falls back to your quota level when the session is quiet.
 **The wave is the point.** You don't have to switch windows to find out whether
 Claude is waiting on you.
 
+In **CHATGPT mode the mascot turns evil** — green body, red eyes and angled
+brows — generated from the same frames rather than separate artwork.
+
 ### Quota fallback (no hooks, or session idle >20s)
 
 | Left on the tightest limit | Clawd |
