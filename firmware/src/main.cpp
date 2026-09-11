@@ -108,6 +108,13 @@ static const uint8_t BL_DIM = 120;  // nothing urgent -- stop shouting
 static TFT_eSPI tft;
 static TFT_eSprite stage(&tft);  // just the mascot: small enough per frame
 
+// All drawing goes through this. Normally the panel; briefly a full-screen
+// sprite while capturing a screenshot, because reading pixels back off this
+// ST7789 over the parallel bus returns mangled colour.
+static TFT_eSPI *g = &tft;
+static TFT_eSprite shotBuf(&tft);
+static bool capturing = false;
+
 static uint16_t COL_BG, COL_TEXT, COL_DIM, COL_TRACK;
 static uint16_t COL_CLAUDE, COL_CHATGPT, COL_WARN, COL_DANGER;
 
@@ -146,7 +153,7 @@ struct BrandState {
   Limit limits[3];
 };
 
-static const char *ROW_LABEL[3] = {"5-hour limit", "Weekly \xB7 all models", "Usage credits"};
+static const char *ROW_LABEL[3] = {"5-hour limit", "Weekly limit", "Usage credits"};
 static BrandState brands[BRAND_COUNT];
 
 // Server host/port live in NVS so they can be changed from the setup portal
@@ -310,25 +317,25 @@ static void drawBatteryIcon(int x, int y, int pct, bool charging) {
   const int w = 22, h = 11;
   uint16_t frame = pct <= 15 && !charging ? COL_DANGER : COL_DIM;
 
-  tft.drawRoundRect(x, y, w, h, 2, frame);
-  tft.fillRect(x + w, y + 3, 2, h - 6, frame);  // terminal nub
+  g->drawRoundRect(x, y, w, h, 2, frame);
+  g->fillRect(x + w, y + 3, 2, h - 6, frame);  // terminal nub
 
   int inner = w - 4;
   int fill = (int)roundf(inner * constrain(pct, 0, 100) / 100.0f);
   if (fill > 0) {
     uint16_t bar = charging ? COL_CHATGPT : (pct <= 15 ? COL_DANGER : COL_DIM);
-    tft.fillRect(x + 2, y + 2, fill, h - 4, bar);
+    g->fillRect(x + 2, y + 2, fill, h - 4, bar);
   }
 
   if (charging) {
     // Small lightning bolt, drawn over the fill so it reads at any level.
     int cx = x + w / 2, cy = y + h / 2;
-    tft.drawLine(cx + 2, cy - 4, cx - 2, cy, COL_BG);
-    tft.drawLine(cx - 2, cy, cx + 1, cy, COL_BG);
-    tft.drawLine(cx + 1, cy, cx - 2, cy + 4, COL_BG);
-    tft.drawLine(cx + 3, cy - 4, cx - 1, cy, COL_TEXT);
-    tft.drawLine(cx - 1, cy, cx + 2, cy, COL_TEXT);
-    tft.drawLine(cx + 2, cy, cx - 1, cy + 4, COL_TEXT);
+    g->drawLine(cx + 2, cy - 4, cx - 2, cy, COL_BG);
+    g->drawLine(cx - 2, cy, cx + 1, cy, COL_BG);
+    g->drawLine(cx + 1, cy, cx - 2, cy + 4, COL_BG);
+    g->drawLine(cx + 3, cy - 4, cx - 1, cy, COL_TEXT);
+    g->drawLine(cx - 1, cy, cx + 2, cy, COL_TEXT);
+    g->drawLine(cx + 2, cy, cx - 1, cy + 4, COL_TEXT);
   }
 }
 
@@ -486,7 +493,11 @@ static void drawStage() {
       }
     }
   }
-  stage.pushSprite(stageX, stageY);
+  if (capturing) {
+    stage.pushToSprite(&shotBuf, stageX, stageY);
+  } else {
+    stage.pushSprite(stageX, stageY);
+  }
 }
 
 // ---------------------------------------------------------------- networking
@@ -707,24 +718,24 @@ static void invalidate() {
 
 // The bits that never move: header, row labels, bar tracks, divider, brand.
 static void drawChrome() {
-  tft.fillScreen(COL_BG);
+  g->fillScreen(COL_BG);
 
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(COL_DIM, COL_BG);
-  tft.drawString("YOUR USAGE LIMITS", PAD, 4, 1);
+  g->setTextDatum(TL_DATUM);
+  g->setTextColor(COL_DIM, COL_BG);
+  g->drawString("YOUR USAGE LIMITS", PAD, 4, 1);
 
   for (int i = 0; i < 3; i++) {
-    tft.setTextDatum(TL_DATUM);
-    tft.setTextColor(COL_TEXT, COL_BG);
-    tft.drawString(ROW_LABEL[i], PAD, ROW_TOP[i], 2);
-    tft.fillSmoothRoundRect(PAD, ROW_TOP[i] + 19, BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
+    g->setTextDatum(TL_DATUM);
+    g->setTextColor(COL_TEXT, COL_BG);
+    g->drawString(ROW_LABEL[i], PAD, ROW_TOP[i], 2);
+    g->fillSmoothRoundRect(PAD, ROW_TOP[i] + 19, BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
   }
 
-  tft.drawFastVLine(DIVIDER_X, 8, 154, COL_TRACK);
+  g->drawFastVLine(DIVIDER_X, 8, 154, COL_TRACK);
 
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(brandColour(), COL_BG);
-  tft.drawString(BRAND_LABEL[brand], DIVIDER_X + 5, 2, 2);
+  g->setTextDatum(TL_DATUM);
+  g->setTextColor(brandColour(), COL_BG);
+  g->drawString(BRAND_LABEL[brand], DIVIDER_X + 5, 2, 2);
 
   chromeDrawn = true;
   invalidate();
@@ -738,46 +749,43 @@ static void drawRow(int i) {
   int percent = (int)roundf(l.shown);
   if (percent != drawnPercent[i]) {
     drawnPercent[i] = percent;
-    tft.fillSmoothRoundRect(PAD, barY, BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
+    g->fillSmoothRoundRect(PAD, barY, BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
     int filled = (int)roundf(BAR_W * constrain(l.shown, 0.0f, 100.0f) / 100.0f);
     uint16_t colour = barColour(l.shown);
     if (filled >= BAR_H) {
-      tft.fillSmoothRoundRect(PAD, barY, filled, BAR_H, BAR_H / 2, colour, COL_BG);
+      g->fillSmoothRoundRect(PAD, barY, filled, BAR_H, BAR_H / 2, colour, COL_BG);
     } else if (filled > 0) {
-      tft.fillRect(PAD, barY, filled, BAR_H, colour);  // too narrow to round
+      g->fillRect(PAD, barY, filled, BAR_H, colour);  // too narrow to round
     }
   }
 
   String value = l.present ? l.value : String("--");
   if (value != drawnValue[i]) {
     drawnValue[i] = value;
-    tft.fillRect(COL_RIGHT_EDGE - 110, top, 110, 17, COL_BG);
-    tft.setTextDatum(TR_DATUM);
+    g->fillRect(COL_RIGHT_EDGE - 110, top, 110, 17, COL_BG);
+    g->setTextDatum(TR_DATUM);
     // The binding limit is the one to actually watch, so give it the accent.
-    tft.setTextColor(l.binding ? brandColour() : COL_DIM, COL_BG);
-    tft.drawString(value, COL_RIGHT_EDGE, top, 2);
+    g->setTextColor(l.binding ? brandColour() : COL_DIM, COL_BG);
+    g->drawString(value, COL_RIGHT_EDGE, top, 2);
   }
 
   // The 5-hour window ticks down live; the longer ones read better as a
   // wall-clock time, which is how the panel shows them.
+  // Not every window reports a reset; say nothing rather than "Resets in --".
   String reset;
   if (l.present) {
-    reset = (i == 0 || l.resetLabel.isEmpty()) ? "Resets in " + humanDuration(liveResetsIn(l))
-                                               : "Resets " + l.resetLabel;
+    if (!l.resetLabel.isEmpty() && i != 0) {
+      reset = "Resets " + l.resetLabel;
+    } else if (liveResetsIn(l) >= 0) {
+      reset = "Resets in " + humanDuration(liveResetsIn(l));
+    }
   }
-  // The projection is what a bare percentage can't tell you: whether the reset
-  // arrives before the cap does. Only worth saying when it doesn't.
-  String warning;
-  if (l.present && l.willExhaust && l.exhaustsIn > 0) {
-    warning = "cap in " + humanDuration(l.exhaustsIn);
-  }
-  String line = reset + (warning.isEmpty() ? "" : "  \xB7  " + warning);
-  if (line != drawnReset[i]) {
-    drawnReset[i] = line;
-    tft.fillRect(PAD, barY + BAR_H + 2, BAR_W, 10, COL_BG);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextColor(warning.isEmpty() ? COL_DIM : COL_WARN, COL_BG);
-    tft.drawString(line, COL_RIGHT_EDGE, barY + BAR_H + 2, 1);
+  if (reset != drawnReset[i]) {
+    drawnReset[i] = reset;
+    g->fillRect(PAD, barY + BAR_H + 2, BAR_W, 10, COL_BG);
+    g->setTextDatum(TR_DATUM);
+    g->setTextColor(COL_DIM, COL_BG);
+    g->drawString(reset, COL_RIGHT_EDGE, barY + BAR_H + 2, 1);
   }
 }
 
@@ -798,8 +806,8 @@ static void drawSpark() {
   if (sig == drawnSparkSig) return;
   drawnSparkSig = sig;
 
-  tft.fillRect(SPARK_X, SPARK_Y, SPARK_W, SPARK_H + 14, COL_BG);
-  tft.drawFastHLine(SPARK_X, SPARK_Y + SPARK_H, SPARK_W, COL_TRACK);
+  g->fillRect(SPARK_X, SPARK_Y, SPARK_W, SPARK_H + 14, COL_BG);
+  g->drawFastHLine(SPARK_X, SPARK_Y + SPARK_H, SPARK_W, COL_TRACK);
 
   if (l.sparkN >= 2) {
     uint16_t colour = barColour(l.shown);
@@ -807,21 +815,21 @@ static void drawSpark() {
     for (int i = 0; i < l.sparkN; i++) {
       int x = SPARK_X + (SPARK_W - 1) * i / (l.sparkN - 1);
       int y = SPARK_Y + SPARK_H - 1 - (SPARK_H - 2) * l.spark[i] / 100;
-      if (i) tft.drawLine(prevX, prevY, x, y, colour);
+      if (i) g->drawLine(prevX, prevY, x, y, colour);
       prevX = x;
       prevY = y;
     }
   } else {
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextColor(COL_TRACK, COL_BG);
-    tft.drawString("collecting trend", SPARK_X + SPARK_W / 2, SPARK_Y + SPARK_H / 2, 1);
+    g->setTextDatum(MC_DATUM);
+    g->setTextColor(COL_TRACK, COL_BG);
+    g->drawString("collecting trend", SPARK_X + SPARK_W / 2, SPARK_Y + SPARK_H / 2, 1);
   }
 
   String caption;
   if (l.hasTrend) caption = (l.perHour >= 0 ? "+" : "") + String(l.perHour, 1) + "%/h";
-  tft.setTextDatum(TC_DATUM);
-  tft.setTextColor(COL_DIM, COL_BG);
-  tft.drawString(caption, SPARK_X + SPARK_W / 2, SPARK_Y + SPARK_H + 3, 1);
+  g->setTextDatum(TC_DATUM);
+  g->setTextColor(COL_DIM, COL_BG);
+  g->drawString(caption, SPARK_X + SPARK_W / 2, SPARK_Y + SPARK_H + 3, 1);
 }
 
 static void drawAnimLabel() {
@@ -832,7 +840,7 @@ static void drawAnimLabel() {
   bool fresh = brand == BRAND_CLAUDE && live.valid && millis() - live.receivedAt < 20000;
 
   if (manualAnim) {
-    label = String(currentAnim ? currentAnim->name : "") + "  \xB7  " + String(manualIndex + 1) +
+    label = String(currentAnim ? currentAnim->name : "") + "   -   " + String(manualIndex + 1) +
             "/" + String(SPLASH_ANIM_COUNT);
     colour = brandColour();
   } else if (fresh && live.state == "waiting") {
@@ -850,10 +858,10 @@ static void drawAnimLabel() {
 
   if (label == drawnAnimLabel) return;
   drawnAnimLabel = label;
-  tft.fillRect(DIVIDER_X + 2, 96, 320 - DIVIDER_X - 2, 10, COL_BG);
-  tft.setTextDatum(TC_DATUM);
-  tft.setTextColor(colour, COL_BG);
-  tft.drawString(label, CX_RIGHT, 96, 1);
+  g->fillRect(DIVIDER_X + 2, 96, 320 - DIVIDER_X - 2, 10, COL_BG);
+  g->setTextDatum(TC_DATUM);
+  g->setTextColor(colour, COL_BG);
+  g->drawString(label, CX_RIGHT, 96, 1);
 }
 
 // A live burn meter under the sparkline: tokens/sec on a log scale, because
@@ -865,10 +873,10 @@ static void drawCost() {
   String cost = fresh || live.sessionCost > 0 ? "$" + String(live.sessionCost, 2) : "";
   if (cost == drawnCost) return;
   drawnCost = cost;
-  tft.fillRect(DIVIDER_X + 2, 142, 320 - DIVIDER_X - 2, 16, COL_BG);
-  tft.setTextDatum(TC_DATUM);
-  tft.setTextColor(COL_DIM, COL_BG);
-  tft.drawString(cost, CX_RIGHT, 142, 2);
+  g->fillRect(DIVIDER_X + 2, 142, 320 - DIVIDER_X - 2, 16, COL_BG);
+  g->setTextDatum(TC_DATUM);
+  g->setTextColor(COL_DIM, COL_BG);
+  g->drawString(cost, CX_RIGHT, 142, 2);
 }
 
 static void drawBattery() {
@@ -889,7 +897,7 @@ static void drawBattery() {
 
   const int x = portrait ? P_W - 34 : 282;
   const int y = 2;
-  tft.fillRect(x - 2, y, 34, 13, COL_BG);
+  g->fillRect(x - 2, y, 34, 13, COL_BG);
   if (pct < 0) return;
   drawBatteryIcon(x, y, pct, charging);
 }
@@ -906,10 +914,10 @@ static void drawStatus() {
   }
   if (text == drawnStatus) return;
   drawnStatus = text;
-  tft.fillRect(PAD, 158, BAR_W, 10, COL_BG);
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(colour, COL_BG);
-  tft.drawString(text, PAD, 158, 1);
+  g->fillRect(PAD, 158, BAR_W, 10, COL_BG);
+  g->setTextDatum(TL_DATUM);
+  g->setTextColor(colour, COL_BG);
+  g->drawString(text, PAD, 158, 1);
 }
 
 // Show whichever brand is nearest a cap. Only switches on a clear margin so
@@ -918,9 +926,9 @@ static void drawStatus() {
 // bar colour, so the flash fires once rather than nagging.
 static void flashAlert(uint16_t colour) {
   for (int i = 0; i < 2; i++) {
-    tft.fillScreen(colour);
+    g->fillScreen(colour);
     delay(60);
-    tft.fillScreen(COL_BG);
+    g->fillScreen(COL_BG);
     delay(60);
   }
   chromeDrawn = false;
@@ -957,17 +965,17 @@ static void checkAlerts() {
 // the trend as a filled area rather than a line.
 
 static void drawChromePortrait() {
-  tft.fillScreen(COL_BG);
+  g->fillScreen(COL_BG);
 
-  tft.setTextDatum(TL_DATUM);
-  tft.setTextColor(COL_TRACK, COL_BG);
-  tft.drawString("RATION AI", P_PAD, 3, 1);
+  g->setTextDatum(TL_DATUM);
+  g->setTextColor(COL_TRACK, COL_BG);
+  g->drawString("RATION AI", P_PAD, 3, 1);
 
   for (int i = 0; i < 3; i++) {
-    tft.setTextDatum(TL_DATUM);
-    tft.setTextColor(COL_TEXT, COL_BG);
-    tft.drawString(P_ROW_LABEL[i], P_PAD, P_ROW_TOP[i], 2);
-    tft.fillSmoothRoundRect(P_PAD, P_ROW_TOP[i] + 18, P_BAR_W, BAR_H, BAR_H / 2, COL_TRACK,
+    g->setTextDatum(TL_DATUM);
+    g->setTextColor(COL_TEXT, COL_BG);
+    g->drawString(P_ROW_LABEL[i], P_PAD, P_ROW_TOP[i], 2);
+    g->fillSmoothRoundRect(P_PAD, P_ROW_TOP[i] + 18, P_BAR_W, BAR_H, BAR_H / 2, COL_TRACK,
                             COL_BG);
   }
 
@@ -979,15 +987,15 @@ static void drawBrandWordPortrait() {
   String word = BRAND_LABEL[brand];
   if (word == drawnBrandWord) return;
   drawnBrandWord = word;
-  tft.fillRect(0, P_BRAND_Y, P_W, 44, COL_BG);
-  tft.setTextDatum(TC_DATUM);
-  tft.setTextColor(brandColour(), COL_BG);
+  g->fillRect(0, P_BRAND_Y, P_W, 44, COL_BG);
+  g->setTextDatum(TC_DATUM);
+  g->setTextColor(brandColour(), COL_BG);
   // Supercharge Condensed 18pt: CHATGPT measures 158x40px. It fits the 166px
   // width at full size, so the layout gives it a 44px slot rather than
   // shrinking a display face into illegibility.
-  tft.setFreeFont(&SuperchargeCn18);
-  tft.drawString(BRAND_LABEL[brand], P_CX, P_BRAND_Y);
-  tft.setTextFont(1);  // hand the built-in fonts back to everything else
+  g->setFreeFont(&SuperchargeCn18);
+  g->drawString(BRAND_LABEL[brand], P_CX, P_BRAND_Y);
+  g->setTextFont(1);  // hand the built-in fonts back to everything else
 }
 
 // "A$41 of A$70" won't fit beside a font-2 label in 154px, so tighten it.
@@ -1005,23 +1013,23 @@ static void drawRowPortrait(int i) {
   int percent = (int)roundf(l.shown);
   if (percent != drawnPercent[i]) {
     drawnPercent[i] = percent;
-    tft.fillSmoothRoundRect(P_PAD, barY, P_BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
+    g->fillSmoothRoundRect(P_PAD, barY, P_BAR_W, BAR_H, BAR_H / 2, COL_TRACK, COL_BG);
     int filled = (int)roundf(P_BAR_W * constrain(l.shown, 0.0f, 100.0f) / 100.0f);
     uint16_t colour = barColour(l.shown);
     if (filled >= BAR_H) {
-      tft.fillSmoothRoundRect(P_PAD, barY, filled, BAR_H, BAR_H / 2, colour, COL_BG);
+      g->fillSmoothRoundRect(P_PAD, barY, filled, BAR_H, BAR_H / 2, colour, COL_BG);
     } else if (filled > 0) {
-      tft.fillRect(P_PAD, barY, filled, BAR_H, colour);
+      g->fillRect(P_PAD, barY, filled, BAR_H, colour);
     }
   }
 
   String value = l.present ? compactValue(l.value) : String("--");
   if (value != drawnValue[i]) {
     drawnValue[i] = value;
-    tft.fillRect(P_CX - 20, top - 1, P_W - P_CX + 20 - P_PAD, 18, COL_BG);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextColor(l.binding ? brandColour() : COL_DIM, COL_BG);
-    tft.drawString(value, P_W - P_PAD, top, 2);
+    g->fillRect(P_CX - 20, top - 1, P_W - P_CX + 20 - P_PAD, 18, COL_BG);
+    g->setTextDatum(TR_DATUM);
+    g->setTextColor(l.binding ? brandColour() : COL_DIM, COL_BG);
+    g->drawString(value, P_W - P_PAD, top, 2);
   }
 }
 
@@ -1039,10 +1047,10 @@ static void drawLivePortrait() {
     colour = COL_DANGER;
     if (label == drawnAnimLabel) return;
     drawnAnimLabel = label;
-    tft.fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
-    tft.setTextDatum(TC_DATUM);
-    tft.setTextColor(colour, COL_BG);
-    tft.drawString(label, P_CX, P_LIVE_Y, 2);
+    g->fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
+    g->setTextDatum(TC_DATUM);
+    g->setTextColor(colour, COL_BG);
+    g->drawString(label, P_CX, P_LIVE_Y, 2);
     return;
   }
   if (b.staleFor > 120) {
@@ -1050,10 +1058,10 @@ static void drawLivePortrait() {
     colour = COL_WARN;
     if (label == drawnAnimLabel) return;
     drawnAnimLabel = label;
-    tft.fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
-    tft.setTextDatum(TC_DATUM);
-    tft.setTextColor(colour, COL_BG);
-    tft.drawString(label, P_CX, P_LIVE_Y, 2);
+    g->fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
+    g->setTextDatum(TC_DATUM);
+    g->setTextColor(colour, COL_BG);
+    g->drawString(label, P_CX, P_LIVE_Y, 2);
     return;
   }
 
@@ -1078,10 +1086,10 @@ static void drawLivePortrait() {
 
   if (label == drawnAnimLabel) return;
   drawnAnimLabel = label;
-  tft.fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
-  tft.setTextDatum(TC_DATUM);
-  tft.setTextColor(colour, COL_BG);
-  tft.drawString(label, P_CX, P_LIVE_Y, 2);
+  g->fillRect(0, P_LIVE_Y, P_W, 16, COL_BG);
+  g->setTextDatum(TC_DATUM);
+  g->setTextColor(colour, COL_BG);
+  g->drawString(label, P_CX, P_LIVE_Y, 2);
 }
 
 // Swap layouts: the panel rotation, the geometry, and the sprite all change.
@@ -1104,12 +1112,12 @@ static void setPortrait(bool want) {
 }
 
 static void splash(const String &message) {
-  tft.fillScreen(COL_BG);
-  tft.setTextDatum(MC_DATUM);
-  tft.setTextColor(COL_CLAUDE, COL_BG);
-  tft.drawString("RationAI", 160, 70, 4);
-  tft.setTextColor(COL_DIM, COL_BG);
-  tft.drawString(message, 160, 100, 2);
+  g->fillScreen(COL_BG);
+  g->setTextDatum(MC_DATUM);
+  g->setTextColor(COL_CLAUDE, COL_BG);
+  g->drawString("RationAI", 160, 70, 4);
+  g->setTextColor(COL_DIM, COL_BG);
+  g->drawString(message, 160, 100, 2);
   chromeDrawn = false;
 }
 
@@ -1125,6 +1133,104 @@ static void updateBacklight() {
   if (want != backlight) {
     backlight = want;
     analogWrite(TFT_BL, backlight);
+  }
+}
+
+// Paint every element. Cheap on a normal frame because each piece repaints
+// only when its own value changed; a forced full repaint happens when chrome
+// is invalidated.
+static void renderAll() {
+  if (!chromeDrawn) portrait ? drawChromePortrait() : drawChrome();
+  drawStage();
+  if (portrait) {
+    drawBrandWordPortrait();
+    for (int i = 0; i < 3; i++) drawRowPortrait(i);
+    drawLivePortrait();
+  } else {
+    for (int i = 0; i < 3; i++) drawRow(i);
+    drawAnimLabel();
+    drawSpark();
+    drawCost();
+    drawStatus();
+  }
+  drawBattery();
+}
+
+// ------------------------------------------------------------- screenshots
+//
+// Reads the panel back over the parallel bus and streams it as base64 rows, so
+// documentation shows the real device output rather than a mock-up. Triggered
+// by sending 's' (current screen) or 'g' (step the animation, then dump) on
+// the serial port; costs nothing when unused.
+
+static const char B64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void dumpBuffer(uint16_t *px, int w, int h) {
+  Serial.printf("SHOT %d %d\n", w, h);
+  for (int y = 0; y < h; y++) {
+    uint32_t acc = 0;
+    int bits = 0;
+    for (int x = 0; x < w; x++) {
+      uint16_t v = px[y * w + x];
+      for (int b = 0; b < 2; b++) {
+        acc = (acc << 8) | (b ? (v & 0xFF) : (v >> 8));
+        bits += 8;
+        while (bits >= 6) {
+          bits -= 6;
+          Serial.write(B64[(acc >> bits) & 0x3F]);
+        }
+      }
+    }
+    if (bits) Serial.write(B64[(acc << (6 - bits)) & 0x3F]);
+    Serial.println();
+  }
+  Serial.println("ENDSHOT");
+}
+
+// Re-render the whole UI into an off-screen buffer and stream that. Reading
+// the panel back gives 18-bit colour that does not survive the trip to 16-bit,
+// so the only trustworthy pixels are the ones we draw ourselves.
+static void dumpScreen() {
+  const int w = tft.width(), h = tft.height();
+  if (!shotBuf.createSprite(w, h)) {
+    Serial.println("SHOTFAIL no memory");
+    return;
+  }
+
+  capturing = true;
+  g = &shotBuf;
+  chromeDrawn = false;  // force a complete repaint into the buffer
+  renderAll();
+  g = &tft;
+  capturing = false;
+
+  dumpBuffer((uint16_t *)shotBuf.getPointer(), w, h);
+  shotBuf.deleteSprite();
+
+  chromeDrawn = false;  // and repaint the real panel
+}
+
+static void handleSerialCommands() {
+  if (!Serial.available()) return;
+  int c = Serial.read();
+  if (c == 's') {
+    dumpScreen();
+  } else if (c == 'g') {
+    // Step to the next animation and settle a frame before dumping.
+    manualAnim = true;
+    manualIndex = (manualIndex + 1) % SPLASH_ANIM_COUNT;
+    setAnim(&splash_anims[manualIndex]);
+    drawStage();
+    delay(40);
+    dumpScreen();
+  } else if (c == 'f') {
+    // Advance one animation frame in place, for capturing a loop.
+    animFrame = (animFrame + 1 > currentAnim->loop_end) ? currentAnim->loop_start : animFrame + 1;
+    drawStage();
+    delay(20);
+    dumpScreen();
+  } else if (c == 'r') {
+    setPortrait(!portrait);
   }
 }
 
@@ -1231,6 +1337,7 @@ void setup() {
 void loop() {
   bool due = millis() - lastPollMs >= POLL_INTERVAL_MS;
 
+  handleSerialCommands();
   keyButton.update();
   bootButton.update();
 
@@ -1327,25 +1434,11 @@ void loop() {
   if (millis() - lastFrameMs >= FRAME_MS) {
     lastFrameMs = millis();
 
-    if (!chromeDrawn) portrait ? drawChromePortrait() : drawChrome();
     animateBars();
     if (!manualAnim) setAnim(findAnim(moodFor()));
     advanceAnim();
     updateBacklight();
-
-    drawStage();
-    if (portrait) {
-      drawBrandWordPortrait();
-      for (int i = 0; i < 3; i++) drawRowPortrait(i);
-      drawLivePortrait();
-    } else {
-      for (int i = 0; i < 3; i++) drawRow(i);
-      drawAnimLabel();
-      drawSpark();
-      drawCost();
-      drawStatus();
-    }
-    drawBattery();
+    renderAll();
   }
 
   delay(2);

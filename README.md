@@ -1,26 +1,14 @@
 # RationAI
 
+<img src="docs/anim/waving.gif" width="120" align="right" alt="">
+
 A desk gauge for your Claude and ChatGPT plan allowance, on a LilyGO
 T-Display-S3.
 
 It answers the question you'd otherwise alt-tab for: *how much have I got
 left, and is Claude waiting on me?*
 
-```
-┌──────────────────────────────────────────┬──────────────────┐
-│ YOUR USAGE LIMITS                        │ CLAUDE           │
-│ 5-hour limit                        23%  │                  │
-│ ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   │      (\_/)       │
-│                      Resets in 4h19m     │     ( •,•)       │
-│ Weekly · all models                 46%  │     (")_(")      │
-│ ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░   │                  │
-│                      Resets Fri 8:00 PM  │    needs you     │
-│ Usage credits              A$41 of A$70  │  ╱╲__╱╲_         │
-│ ████████████████████░░░░░░░░░░░░░░░░░░   │    +3.4%/h       │
-│                      Resets Thu 10:00 AM │                  │
-│ 192.168.88.5                             │      $12.40      │
-└──────────────────────────────────────────┴──────────────────┘
-```
+<img src="docs/landscape.png" width="100%" alt="Landscape dashboard: three limit bars with reset times, the mascot, trend and session cost">
 
 - **Real plan limits**, not estimates — the same 5-hour, weekly and credit
   windows Claude Code's own `/usage` panel shows, plus the ChatGPT/Codex
@@ -28,11 +16,36 @@ left, and is Claude waiting on me?*
 - **A live avatar.** The mascot animates in step with your Claude Code session
   and **waves when Claude is blocked waiting on you**, so you can tell from
   across the desk without switching windows.
-- **Trend and projection.** A sparkline per window, a burn rate, and an amber
-  warning when you're on course to hit the cap *before* the window resets.
-- **Two layouts.** Landscape dashboard, or a portrait totem with a 6× mascot.
+- **Trend at a glance.** A sparkline for the binding window and a burn rate.
+- **Two layouts**, landscape or portrait totem.
 - **Zero configuration when you move.** The server advertises itself over
   Bonjour; the display finds whichever laptop is running it, on any network.
+
+## The two layouts
+
+Four taps of the KEY button flips between them. Both of these are real captures
+from the hardware, not mock-ups — the firmware renders a frame into an
+off-screen buffer and streams it over serial.
+
+| Landscape | Portrait totem |
+| --- | --- |
+| <img src="docs/landscape.png" width="420" alt="Landscape layout"> | <img src="docs/portrait.png" width="170" alt="Portrait totem layout"> |
+
+## The mascot
+
+<img src="docs/anim/racing-car.gif" width="150" align="right" alt="">
+
+Claude Code hooks tell the display what the session is doing, and the mascot
+follows: heads-down on the laptop while thinking, a magnifier while searching,
+the racing car while running a shell command — and **waving** the moment Claude
+is blocked waiting on you.
+
+<img src="docs/anim/magnifier.gif" width="130" align="right" alt="">
+
+With no hooks installed it falls back to your quota level instead, getting
+progressively less cheerful as the tightest limit fills.
+
+<br clear="right">
 
 ## How it works
 
