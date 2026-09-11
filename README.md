@@ -8,7 +8,7 @@ left, and is Claude waiting on me?*
 
 ```
 ┌──────────────────────────────────────────┬──────────────────┐
-│ YOUR USAGE LIMITS                        │ CLAUDE      [⚡█]│
+│ YOUR USAGE LIMITS                        │ CLAUDE           │
 │ 5-hour limit                        23%  │                  │
 │ ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   │      (\_/)       │
 │                      Resets in 4h19m     │     ( •,•)       │
